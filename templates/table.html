@@ -1,20 +1,345 @@
-{% for task in tasks %}
-<li>
-    <b> [{{ task[0] }}]</b> {{task[1]}} - <i>{{task[2]}}</i>
-    <form action="/dele/{{ task[0] }}" method="POST" style="display:inline;">
-        <button type="submit" style="color: red; background: none; border: none; cursor: pointer;">[Delete]</button>
-    </form>
-</li>
-{% endfor %}
-<a>
-    <form action="/"><button>return</button></form>
-</a>
-<form action="/reset" method="post">
-    <i>reset after deleting all tasks</i>
-    <button type="submit">!reset!</button>
+<!DOCTYPE html>
+<html lang="en">
 
-</form>
-<form action="/run" method="post">
-    <input type="text" name="cmd" placeholder="enter command">
-    <button type="submit">run</button>
-</form>
+<head>
+    <meta charset="UTF-8">
+    <title>Task Manager</title>
+    <style>
+        /* Transparent glass box effect */
+        /* Smooth frosted glass box */
+        .glass-box {
+            background: linear-gradient(135deg,
+                    rgba(255, 255, 255, 0.12),
+                    rgba(255, 255, 255, 0.05));
+
+            /* very subtle translucent */
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: 28px;
+            /* smoother, rounder edges */
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 800px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+            /* soft glow around */
+        }
+
+        /* Body cosmic background stays the same */
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e1e2f, #2b2b4f, #3c1f4a, #1a1a2d, #3d235a, #2e1a47);
+            background-size: 500% 500%;
+            animation: gradientShift 20s ease infinite;
+            color: #f5f5f5;
+            margin: 0;
+            padding: 2rem;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated star overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent url("https://www.transparenttextures.com/patterns/stardust.png") repeat;
+            opacity: 0.6;
+            animation: twinkle 6s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        /* Frosted glass tasks */
+        li {
+            background: rgba(31, 31, 46, 0.5);
+            /* translucent */
+            backdrop-filter: blur(8px) saturate(150%);
+            margin: 0.7rem 0;
+            padding: 1rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(100, 149, 237, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.25s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        li:hover {
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 0 25px rgba(100, 149, 237, 0.8), inset 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Glass buttons */
+        button {
+            position: relative;
+            padding: 0.6rem 1.4rem;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.3s, background 0.3s;
+        }
+
+        /* Button glow hover */
+        button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 0 18px rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Neon ripple */
+        button::after {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: 50%;
+            left: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 10%, transparent 70%);
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.6s ease;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        button:active::after {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* Inputs get glass glow */
+        input[type="text"] {
+            padding: 0.6rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            margin-right: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(6px);
+            color: #fff;
+            transition: box-shadow 0.3s, border 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4ea8ff;
+            box-shadow: 0 0 12px #4ea8ff;
+        }
+
+        /* Mousemove parallax for fun */
+        li:hover {
+            perspective: 600px;
+        }
+
+        li:hover div {
+            transform: rotateY(5deg);
+            transition: transform 0.3s;
+        }
+
+        /* Animations */
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 0.9;
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #f1f1f1;
+            animation: fadeInDown 1s ease;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            max-width: 600px;
+            margin: 2rem auto;
+        }
+
+        li {
+            background: #1f1f2e;
+            margin: 0.7rem 0;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.25s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        li:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 15px rgba(100, 149, 237, 0.7);
+        }
+
+        b {
+            color: #a3a3ff;
+        }
+
+        form {
+            display: inline;
+        }
+
+        button {
+            position: relative;
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #fff;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.3s;
+        }
+
+        button::after {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: 50%;
+            left: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%) scale(0);
+            border-radius: 50%;
+            transition: transform 0.5s ease;
+            pointer-events: none;
+        }
+
+        button:active::after {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #e74c3c, #ff7675);
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #ffbb33, #ffd65a);
+            color: #222;
+        }
+
+        .run-btn {
+            background: linear-gradient(135deg, #2ecc71, #46e88d);
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #3498db, #4ea8ff);
+        }
+
+        .actions {
+            text-align: center;
+            margin-top: 2rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        input[type="text"] {
+            padding: 0.5rem;
+            border: 1px solid #555;
+            border-radius: 6px;
+            margin-right: 0.5rem;
+            background: #1a1a28;
+            color: #fff;
+            transition: box-shadow 0.3s, border 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4ea8ff;
+            box-shadow: 0 0 10px #4ea8ff;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="glass-box">
+        <h1>🌌 Task Manager</h1>
+        <ul>
+            {% for task in tasks %}
+            <li style="animation-delay: {{ (loop.index0 * 0.1) | round(2) }}s;">
+                <div>
+                    <b>[{{ task[0] }}]</b> {{ task[1] }} - <i>{{ task[2] }}</i>
+                </div>
+                <form action="/dele/{{ task[0] }}" method="POST">
+                    <button type="submit" class="delete-btn">Delete</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="actions">
+            <form action="/" style="display:inline;">
+                <button class="nav-btn">Return</button>
+            </form>
+            <form action="/reset" method="post" style="display:inline;">
+                <button type="submit" class="reset-btn">Reset</button>
+            </form>
+            <form action="/run" method="post" style="margin-top:1rem;">
+                <input type="text" name="cmd" placeholder="Enter command">
+                <button type="submit" class="run-btn">Run</button>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>
