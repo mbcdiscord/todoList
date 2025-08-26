@@ -1,0 +1,12 @@
+{% for task in tasks %}
+<table>
+    <b> [{{ task[0] }}]</b> {{task[1]}} - <i>{{task[2]}}</i>
+</table>
+{% endfor %}
+<a>
+    <form action="/"><button>return</button></form>
+</a>
+<form action="/reset" method="post">
+    <i>reset when the db is empty!</i>
+    <button type="submit">!reset!</button>
+</form>
