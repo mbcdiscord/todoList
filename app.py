@@ -71,6 +71,16 @@ def reset():
     cursor.close()
     conn.close()
     return redirect('/')
+@app.route('/run', methods=['POST'])
+def run():
+    cmd = request.form['cmd']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(cmd)
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect('/')
 
 if __name__ == '__main__':
     app.run(debug=True)

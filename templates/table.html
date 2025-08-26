@@ -1,12 +1,20 @@
 {% for task in tasks %}
-<table>
+<li>
     <b> [{{ task[0] }}]</b> {{task[1]}} - <i>{{task[2]}}</i>
-</table>
+    <form action="/dele/{{ task[0] }}" method="POST" style="display:inline;">
+        <button type="submit" style="color: red; background: none; border: none; cursor: pointer;">[Delete]</button>
+    </form>
+</li>
 {% endfor %}
 <a>
     <form action="/"><button>return</button></form>
 </a>
 <form action="/reset" method="post">
-    <i>reset when the db is empty!</i>
+    <i>reset after deleting all tasks</i>
     <button type="submit">!reset!</button>
+
+</form>
+<form action="/run" method="post">
+    <input type="text" name="cmd" placeholder="enter command">
+    <button type="submit">run</button>
 </form>
